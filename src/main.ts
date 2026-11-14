@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { WebGPURenderer } from "three/webgpu";
 import "./style.css";
 
 const viewport = document.querySelector<HTMLDivElement>("#viewport");
@@ -33,30 +34,37 @@ const referenceObject = new THREE.Mesh(referenceGeometry, referenceMaterial);
 referenceObject.position.y = 0.5;
 scene.add(referenceObject);
 
-const ambient = new THREE.HemisphereLight("#dce6ed", "#252a2e", 2.1);
-scene.add(ambient);
+scene.add(new THREE.HemisphereLight("#dce6ed", "#252a2e", 2.1));
 
 const keyLight = new THREE.DirectionalLight("#ffffff", 2.2);
 keyLight.position.set(4, 7, 3);
 scene.add(keyLight);
 
-let renderer: THREE.WebGPURenderer | THREE.WebGLRenderer | undefined;
+let renderer: THREE.WebGLRenderer | WebGPURenderer | undefined;
 let animationFrame = 0;
 let disposed = false;
+let resizeObserver: ResizeObserver | undefined;
+
+function createWebGLFallback(): THREE.WebGLRenderer {
+  const fallback = new THREE.WebGLRenderer({ antialias: true });
+  status.textContent = "Renderer: WebGL fallback";
+  return fallback;
+}
 
 async function initializeRenderer(): Promise<void> {
   try {
-    const webgpuAvailable =
-      typeof navigator !== "undefined" && "gpu" in navigator;
-
-    if (webgpuAvailable) {
-      const candidate = new THREE.WebGPURenderer({ antialias: true });
-      await candidate.init();
-      renderer = candidate;
-      status.textContent = "Renderer: WebGPU";
+    if ("gpu" in navigator) {
+      try {
+        const candidate = new WebGPURenderer({ antialias: true });
+        await candidate.init();
+        renderer = candidate;
+        status.textContent = "Renderer: WebGPU";
+      } catch (error) {
+        console.warn("WebGPU initialization failed; using WebGL.", error);
+        renderer = createWebGLFallback();
+      }
     } else {
-      renderer = new THREE.WebGLRenderer({ antialias: true });
-      status.textContent = "Renderer: WebGL fallback";
+      renderer = createWebGLFallback();
     }
 
     if (disposed || !renderer) {
@@ -68,7 +76,7 @@ async function initializeRenderer(): Promise<void> {
     renderer.setSize(viewport.clientWidth, viewport.clientHeight);
     viewport.appendChild(renderer.domElement);
 
-    const resizeObserver = new ResizeObserver(() => {
+    resizeObserver = new ResizeObserver(() => {
       if (!renderer || disposed) return;
       const width = Math.max(viewport.clientWidth, 1);
       const height = Math.max(viewport.clientHeight, 1);
@@ -90,7 +98,7 @@ async function initializeRenderer(): Promise<void> {
       () => {
         disposed = true;
         window.cancelAnimationFrame(animationFrame);
-        resizeObserver.disconnect();
+        resizeObserver?.disconnect();
         renderer?.dispose();
         referenceGeometry.dispose();
         referenceMaterial.dispose();
