@@ -34,6 +34,25 @@ describe("maintenance facility mission level", () => {
     expect(level.exitPosition.z).toBeCloseTo(22.3, 2);
   });
 
+  it("restores facility lighting and returns to emergency power on reset", () => {
+    const level = createLevel();
+    const ambient = scene?.getLightByName("facility-ambient");
+    const exitIndicator = scene?.getLightByName("exit-power-indicator");
+
+    expect(ambient?.intensity).toBeCloseTo(0.72, 2);
+    expect(exitIndicator?.intensity).toBeCloseTo(0.24, 2);
+
+    level.restorePower();
+
+    expect(ambient?.intensity).toBeCloseTo(1.0, 2);
+    expect(exitIndicator?.intensity).toBeCloseTo(0.9, 2);
+
+    level.reset();
+
+    expect(ambient?.intensity).toBeCloseTo(0.72, 2);
+    expect(exitIndicator?.intensity).toBeCloseTo(0.24, 2);
+  });
+
   it("opens the exit only after the opening animation completes", () => {
     const level = createLevel();
     const exitPosition = new Vector3(0, 1.8, 22.3);
