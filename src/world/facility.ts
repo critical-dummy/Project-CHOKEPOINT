@@ -78,8 +78,9 @@ export function createMissionLevel(scene: Scene): MissionLevel {
   box("north-perimeter-wall", new Vector3(0, 2.5, 28), new Vector3(30, 5, 0.6), materials.wall);
   box("south-perimeter-wall", new Vector3(0, 2.5, -28), new Vector3(30, 5, 0.6), materials.wall);
 
-  // A low ceiling and visible structural beams give the space scale.
-  box("ceiling", new Vector3(0, 5.35, 0), new Vector3(30, 0.45, 56), materials.dark, false);
+  // The roof is split around the exit slot so the gate can retract into its overhead pocket.
+  box("ceiling-south", new Vector3(0, 5.35, -8), new Vector3(30, 0.45, 40), materials.dark, false);
+  box("ceiling-north", new Vector3(0, 5.35, 23.5), new Vector3(30, 0.45, 9), materials.dark, false);
   for (const z of [-20, -10, 0, 10, 20]) {
     box(
       `ceiling-beam-${z}`,
