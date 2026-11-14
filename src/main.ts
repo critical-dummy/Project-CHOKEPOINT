@@ -5,6 +5,7 @@ import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { Scene } from "@babylonjs/core/scene";
 import { createFirstPersonController } from "./player/first-person-controller";
 import { createMissionState, activateRelay, completeMission } from "./game/mission-state";
+import { loadMissionRecord, recordMissionCompletion } from "./game/save-runtime";
 import type { RelayId } from "./game/mission-state";
 import { createMissionLevel } from "./world/facility";
 import "./style.css";
@@ -35,6 +36,10 @@ const eastStatus = requiredElement<HTMLElement>("east-status");
 const interactionPrompt = requiredElement<HTMLElement>("interaction-prompt");
 const interactionLabel = requiredElement<HTMLElement>("interaction-label");
 const missionNotice = requiredElement<HTMLElement>("mission-notice");
+const missionTimer = requiredElement<HTMLElement>("mission-timer");
+const completionTime = requiredElement<HTMLElement>("completion-time");
+const bestTime = requiredElement<HTMLElement>("best-time");
+const completionCount = requiredElement<HTMLElement>("completion-count");
 
 interface Runtime {
   engine: AbstractEngine;
@@ -54,6 +59,9 @@ let disposed = false;
 let currentInteraction = "";
 let lastPrompt = "";
 let lastObjectiveDistance = "";
+let missionElapsedMs = 0;
+let runStartedAt = 0;
+let lastTimerLabel = "";
 
 async function createRuntime(): Promise<Runtime> {
   try {
@@ -82,6 +90,27 @@ async function createRuntime(): Promise<Runtime> {
     true,
   );
   return { engine, canvas };
+}
+
+const MISSION_ID = "power-restoration";
+
+function formatMissionTime(milliseconds: number): string {
+  const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function updateMissionTimer(): void {
+  const currentRunMs = phase === "active" && runStartedAt > 0
+    ? performance.now() - runStartedAt
+    : 0;
+  const label = formatMissionTime(missionElapsedMs + currentRunMs);
+
+  if (label !== lastTimerLabel) {
+    lastTimerLabel = label;
+    missionTimer.textContent = label;
+  }
 }
 
 function updateMissionHud(): void {
@@ -211,6 +240,11 @@ function interact(): void {
 function pauseMission(): void {
   if (phase !== "active") return;
   phase = "paused";
+  if (runStartedAt > 0) {
+    missionElapsedMs += performance.now() - runStartedAt;
+    runStartedAt = 0;
+  }
+  updateMissionTimer();
   player?.detachControls();
   showInteractionPrompt("");
   pauseOverlay.classList.remove("is-hidden");
@@ -219,7 +253,11 @@ function pauseMission(): void {
 async function beginOrResumeMission(): Promise<void> {
   if (!runtime || !player || (phase !== "briefing" && phase !== "paused")) return;
 
+  const startingFresh = phase === "briefing";
+  if (startingFresh) missionElapsedMs = 0;
+  runStartedAt = performance.now();
   phase = "active";
+  updateMissionTimer();
   briefingOverlay.classList.add("is-hidden");
   pauseOverlay.classList.add("is-hidden");
   completeOverlay.classList.add("is-hidden");
@@ -239,7 +277,23 @@ function finishMission(): void {
   mission = completeMission(mission);
   if (!mission.complete) return;
 
+  if (runStartedAt > 0) {
+    missionElapsedMs += performance.now() - runStartedAt;
+    runStartedAt = 0;
+  }
   phase = "complete";
+  updateMissionTimer();
+  completionTime.textContent = formatMissionTime(missionElapsedMs);
+  bestTime.textContent = "SAVING";
+  completionCount.textContent = "…";
+  void recordMissionCompletion(MISSION_ID, missionElapsedMs).then((record) => {
+    bestTime.textContent = formatMissionTime(record.bestTimeMs);
+    completionCount.textContent = String(record.completions);
+  }).catch((error) => {
+    console.warn("Mission record could not be saved.", error);
+    bestTime.textContent = "--:--";
+    completionCount.textContent = "UNAVAILABLE";
+  });
   player?.detachControls();
   if (document.pointerLockElement) document.exitPointerLock();
   showInteractionPrompt("");
@@ -256,6 +310,10 @@ function restartMission(): void {
   level.reset();
   mission = createMissionState();
   phase = "briefing";
+  missionElapsedMs = 0;
+  runStartedAt = 0;
+  lastTimerLabel = "";
+  updateMissionTimer();
   currentInteraction = "";
   lastPrompt = "";
   lastObjectiveDistance = "";
@@ -342,6 +400,13 @@ async function start(): Promise<void> {
 
     updateMissionHud();
     updateObjectiveDistance();
+    void loadMissionRecord(MISSION_ID).then((record) => {
+      if (!record) return;
+      bestTime.textContent = formatMissionTime(record.bestTimeMs);
+      completionCount.textContent = String(record.completions);
+    }).catch(() => {
+      // The mission remains playable when browser storage is unavailable.
+    });
     scene.onBeforeCameraRenderObservable.add(() => player?.updateBody());
     startButton.disabled = false;
     startButton.textContent = "BEGIN MISSION";
@@ -359,6 +424,7 @@ async function start(): Promise<void> {
       const deltaSeconds = Math.min(runtime?.engine.getDeltaTime() ?? 0, 50) / 1000;
 
       if (phase === "active") {
+        updateMissionTimer();
         level.update(deltaSeconds);
         updateObjectiveDistance();
         updateInteractionTarget();
