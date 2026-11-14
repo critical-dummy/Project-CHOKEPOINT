@@ -1,15 +1,17 @@
 # Project-CHOKEPOINT
-A browser-based, realism-focused, single-player modern warfare FPS built around physical, environmental, and human simulation.
+
+A browser-based, realism-focused, single-player first-person simulation built around physical, environmental, and human simulation.
 
 ## Development
 
-The current development branch contains the first playable browser foundation:
+The active engine direction is Babylon.js. The current development branch contains the first browser runtime slice:
 
-- Three.js renderer with WebGPU initialization and WebGL fallback
-- A neutral, bounded test range with static geometry
-- First-person mouse look and keyboard movement
-- Basic jump/gravity and axis-separated obstacle checks
-- A simple full-body visual placeholder attached to the first-person camera rig
+- Babylon.js 9.36.0 core engine
+- WebGPU initialization with a separate-canvas WebGL fallback
+- A neutral, bounded test range with static environment geometry
+- Babylon UniversalCamera for first-person mouse and keyboard input
+- Built-in camera gravity and mesh collision checks
+- Sprint input and a temporary first-person body-view proxy
 
 ### Run locally
 
@@ -21,11 +23,13 @@ npm run dev
 ### Controls
 
 - `WASD`: move
-- Mouse: look around (click the viewport to capture the pointer)
+- Mouse: look around
+- Click the viewport: capture the mouse
 - `Shift`: run
-- `Space`: jump
-- `Esc`: release the pointer
+- `Esc`: release the mouse
 
 ### Current limitations
 
-This is an initial movement/rendering slice, not a completed simulation. Collision handling is intentionally simple and will be replaced or validated against a dedicated physics layer. The body mesh is a temporary visual placeholder. No weapon operation, real-world tactical procedures, or real weapon performance models are implemented.
+This is an initial rendering and movement slice, not a completed simulation. The current collision setup uses Babylon's built-in scene collision system; Havok Physics V2 is not integrated yet. Jumping, grounded-state handling, robust character locomotion, and the final animated full-body rig remain future work. The visible body is a temporary proxy.
+
+The test range is neutral geometry for validating rendering, camera behavior, and general environment interactions. No real-world weapon operation, tactical procedures, or real weapon performance models are part of this implementation.
