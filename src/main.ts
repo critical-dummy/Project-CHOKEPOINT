@@ -298,6 +298,7 @@ async function start(): Promise<void> {
     scene.activeCamera = player.camera;
 
     updateMissionHud();
+    scene.onBeforeCameraRenderObservable.add(() => player?.updateBody());
     startButton.disabled = false;
     startButton.textContent = "BEGIN MISSION";
 
