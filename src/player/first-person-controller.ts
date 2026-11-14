@@ -17,8 +17,8 @@ export interface FirstPersonController {
   dispose(): void;
 }
 
-const WALK_SPEED = 0.075;
-const RUN_SPEED = 0.12;
+const WALK_SPEED = 2.8;
+const RUN_SPEED = 4.5;
 const PLAYER_EYE_HEIGHT = 1.8;
 const SPAWN_POSITION = new Vector3(0, PLAYER_EYE_HEIGHT, -22);
 
@@ -108,6 +108,8 @@ export function createFirstPersonController(
   });
 
   let controlsAttached = false;
+  let gaitPhase = 0;
+  const previousPosition = camera.position.clone();
   const sprintKeys = new Set<string>();
 
   function updateMovementSpeed(): void {
@@ -154,12 +156,33 @@ export function createFirstPersonController(
   }
 
   function updateBody(): void {
+    const dx = camera.position.x - previousPosition.x;
+    const dz = camera.position.z - previousPosition.z;
+    const distanceMoved = Math.sqrt(dx * dx + dz * dz);
+
+    if (distanceMoved > 0.0002) {
+      gaitPhase += distanceMoved * 7.5;
+    } else {
+      gaitPhase += (0 - gaitPhase) * 0.08;
+    }
+
+    const stride = Math.min(distanceMoved * 18, 1);
+    legs.forEach((leg, index) => {
+      const phaseOffset = index === 0 ? 0 : Math.PI;
+      leg.rotation.x = Math.sin(gaitPhase + phaseOffset) * 0.34 * stride;
+    });
+    boots.forEach((boot, index) => {
+      const phaseOffset = index === 0 ? 0 : Math.PI;
+      boot.rotation.x = Math.sin(gaitPhase + phaseOffset) * 0.18 * stride;
+    });
+
     bodyRoot.position.set(
       camera.position.x,
       camera.position.y - PLAYER_EYE_HEIGHT,
       camera.position.z,
     );
     bodyRoot.rotation.y = camera.rotation.y;
+    previousPosition.copyFrom(camera.position);
   }
 
   updateBody();
@@ -177,6 +200,8 @@ export function createFirstPersonController(
       camera.position.copyFrom(SPAWN_POSITION);
       camera.rotation.set(0, 0, 0);
       camera.rotationQuaternion = null;
+      previousPosition.copyFrom(camera.position);
+      gaitPhase = 0;
       sprintKeys.clear();
       updateMovementSpeed();
       updateBody();
