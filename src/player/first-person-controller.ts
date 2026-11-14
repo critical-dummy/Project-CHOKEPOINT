@@ -17,8 +17,8 @@ export interface FirstPersonController {
   dispose(): void;
 }
 
-const WALK_SPEED = 0.35;
-const RUN_SPEED = 0.58;
+const WALK_SPEED = 0.075;
+const RUN_SPEED = 0.12;
 const PLAYER_EYE_HEIGHT = 1.8;
 const SPAWN_POSITION = new Vector3(0, PLAYER_EYE_HEIGHT, -22);
 
@@ -47,7 +47,7 @@ export function createFirstPersonController(
   camera.applyGravity = true;
   camera.checkCollisions = true;
   camera.ellipsoid = new Vector3(0.38, 0.9, 0.38);
-  camera.ellipsoidOffset = Vector3.Zero();
+  camera.ellipsoidOffset = new Vector3(0, -0.9, 0);
 
   // The body exists in world space, so looking down reveals the player's body
   // instead of a viewmodel that rotates with the camera pitch.
