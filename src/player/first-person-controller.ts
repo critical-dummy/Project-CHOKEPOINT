@@ -1,3 +1,4 @@
+import "@babylonjs/core/Collisions/collisionCoordinator";
 import { Color3 } from "@babylonjs/core/Maths/math.color";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
@@ -19,7 +20,7 @@ export function createFirstPersonController(
 ): FirstPersonController {
   const camera = new UniversalCamera(
     "player-camera",
-    new Vector3(0, 1.7, 10),
+    new Vector3(0, 1.8, 10),
     scene,
   );
 
@@ -29,15 +30,15 @@ export function createFirstPersonController(
   camera.angularSensibility = 3600;
   camera.speed = WALK_SPEED;
 
-  camera.keysUp = [87]; // W
-  camera.keysDown = [83]; // S
-  camera.keysLeft = [65]; // A
-  camera.keysRight = [68]; // D
+  camera.keysUp = [87, 38]; // W / ArrowUp
+  camera.keysDown = [83, 40]; // S / ArrowDown
+  camera.keysLeft = [65, 37]; // A / ArrowLeft
+  camera.keysRight = [68, 39]; // D / ArrowRight
 
   camera.applyGravity = true;
   camera.checkCollisions = true;
   camera.ellipsoid = new Vector3(0.35, 0.9, 0.35);
-  camera.ellipsoidOffset = new Vector3(0, -0.12, 0);
+  camera.ellipsoidOffset = Vector3.Zero();
 
   // Temporary first-person body proxy. Replace with the animated character
   // rig once the player skeleton and locomotion animation system exist.
@@ -74,20 +75,28 @@ export function createFirstPersonController(
     return leg;
   });
 
+  const sprintKeys = new Set<string>();
+  const updateMovementSpeed = (): void => {
+    camera.speed = sprintKeys.size > 0 ? RUN_SPEED : WALK_SPEED;
+  };
+
   const onKeyDown = (event: KeyboardEvent): void => {
     if (event.code === "ShiftLeft" || event.code === "ShiftRight") {
-      camera.speed = RUN_SPEED;
+      sprintKeys.add(event.code);
+      updateMovementSpeed();
     }
   };
 
   const onKeyUp = (event: KeyboardEvent): void => {
     if (event.code === "ShiftLeft" || event.code === "ShiftRight") {
-      camera.speed = WALK_SPEED;
+      sprintKeys.delete(event.code);
+      updateMovementSpeed();
     }
   };
 
   const onWindowBlur = (): void => {
-    camera.speed = WALK_SPEED;
+    sprintKeys.clear();
+    updateMovementSpeed();
   };
 
   const requestPointerLock = (): void => {
