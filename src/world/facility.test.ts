@@ -29,6 +29,9 @@ describe("maintenance facility mission level", () => {
     expect(level.gate.checkCollisions).toBe(true);
     expect(level.relayPanels.west.metadata?.interactionId).toBe("relay-west");
     expect(level.relayPanels.east.metadata?.interactionId).toBe("relay-east");
+    expect(level.relayPositions.west.x).toBeCloseTo(-14.35, 2);
+    expect(level.relayPositions.east.x).toBeCloseTo(14.35, 2);
+    expect(level.exitPosition.z).toBeCloseTo(22.3, 2);
   });
 
   it("opens the exit only after the opening animation completes", () => {
