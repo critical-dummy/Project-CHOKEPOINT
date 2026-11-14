@@ -268,8 +268,16 @@ export function createMissionLevel(scene: Scene): MissionLevel {
       gateOpen = false;
       gate.position.y = GATE_CLOSED_Y;
       gate.checkCollisions = true;
-      relayPanels.west.material = materials.inactive;
-      relayPanels.east.material = materials.inactive;
+      for (const relay of ["west", "east"] as const) {
+        const panel = relayPanels[relay];
+        const indicator = panel.metadata?.indicatorMesh as Mesh | undefined;
+        if (indicator) indicator.material = materials.inactive;
+        panel.material = materials.screen;
+        panel.metadata = {
+          ...panel.metadata,
+          relayActive: false,
+        };
+      }
     },
     isInsideExit(position) {
       const dx = position.x;
