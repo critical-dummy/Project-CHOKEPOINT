@@ -38,7 +38,6 @@ const missionNotice = requiredElement<HTMLElement>("mission-notice");
 interface Runtime {
   engine: AbstractEngine;
   canvas: HTMLCanvasElement;
-  backend: "WebGPU" | "WebGL";
 }
 
 type GamePhase = "briefing" | "active" | "paused" | "complete" | "error";
@@ -62,7 +61,7 @@ async function createRuntime(): Promise<Runtime> {
 
       try {
         await engine.initAsync();
-        return { engine, canvas, backend: "WebGPU" };
+        return { engine, canvas };
       } catch (error) {
         engine.dispose();
         canvas.remove();
@@ -80,11 +79,10 @@ async function createRuntime(): Promise<Runtime> {
     { preserveDrawingBuffer: false, stencil: true },
     true,
   );
-  return { engine, canvas, backend: "WebGL" };
+  return { engine, canvas };
 }
 
 function updateMissionHud(): void {
-  const count = getRelayCount(mission);
   westStatus.textContent = mission.relays.west ? "ONLINE" : "OFFLINE";
   eastStatus.textContent = mission.relays.east ? "ONLINE" : "OFFLINE";
   westStatus.classList.toggle("is-online", mission.relays.west);
@@ -100,7 +98,6 @@ function updateMissionHud(): void {
       "Find and activate both wall-mounted power relays.";
   }
 
-  hud.dataset.relayProgress = String(count);
 }
 
 function showNotice(message: string): void {
@@ -193,6 +190,7 @@ async function beginOrResumeMission(): Promise<void> {
   completeOverlay.classList.add("is-hidden");
   hud.classList.remove("is-hidden");
   player.attachControls();
+  runtime.canvas.focus({ preventScroll: true });
 
   try {
     await player.requestPointerLock();
@@ -244,6 +242,7 @@ function onPointerLockChange(): void {
 function onCanvasClick(): void {
   if (phase !== "active" || !player || !runtime) return;
   if (document.pointerLockElement !== runtime.canvas) {
+    runtime.canvas.focus({ preventScroll: true });
     void player.requestPointerLock().catch(() => {
       showNotice("Mouse capture is unavailable in this browser context.");
     });
