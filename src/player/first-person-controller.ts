@@ -50,12 +50,12 @@ export function createFirstPersonController(
   const clothing = new StandardMaterial("view-clothing", scene);
   clothing.diffuseColor = Color3.FromHexString("#343a3d");
   clothing.specularColor = Color3.Black();
-  clothing.roughness = 0.96;
+  clothing.specularPower = 6;
 
   const trousers = new StandardMaterial("view-trousers", scene);
   trousers.diffuseColor = Color3.FromHexString("#55564e");
   trousers.specularColor = Color3.Black();
-  trousers.roughness = 1;
+  trousers.specularPower = 4;
 
   const torso = MeshBuilder.CreateBox(
     "view-torso",
