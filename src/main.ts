@@ -108,9 +108,10 @@ function showNotice(message: string): void {
 }
 
 function showInteractionPrompt(message: string): void {
-  if (message === lastPrompt) return;
-  lastPrompt = message;
-  interactionLabel.textContent = message;
+  if (message !== lastPrompt) {
+    lastPrompt = message;
+    interactionLabel.textContent = message;
+  }
   interactionPrompt.classList.toggle("is-hidden", message.length === 0);
 }
 
