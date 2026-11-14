@@ -201,8 +201,9 @@ function interact(): void {
     showNotice(`${relayName} relay synchronized.`);
 
     if (mission.exitUnlocked) {
+      level?.restorePower();
       level?.beginGateOpening();
-      showNotice("Both relays online. Exit gate opening.");
+      showNotice("Power restored. Exit gate opening.");
     }
   }
 }
