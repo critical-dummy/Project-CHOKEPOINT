@@ -256,6 +256,11 @@ export function createMissionLevel(scene: Scene): MissionLevel {
       lamp.intensity = index === facilityLamps.length - 1
         ? 0.24
         : index === 6 ? 0.65 : 0.52;
+      lamp.diffuse = index === facilityLamps.length - 1
+        ? Color3.FromHexString("#b27d47")
+        : index === 6
+          ? Color3.FromHexString("#e5c58b")
+          : Color3.FromHexString("#c5d9d9");
     });
     exitIndicator.diffuse = Color3.FromHexString("#b27d47");
   }
