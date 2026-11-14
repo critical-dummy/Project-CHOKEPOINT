@@ -4,7 +4,7 @@ import type { AbstractEngine } from "@babylonjs/core/Engines/abstractEngine";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { Scene } from "@babylonjs/core/scene";
 import { createFirstPersonController } from "./player/first-person-controller";
-import { createMissionState, activateRelay, completeMission, getRelayCount } from "./game/mission-state";
+import { createMissionState, activateRelay, completeMission } from "./game/mission-state";
 import type { RelayId } from "./game/mission-state";
 import { createMissionLevel } from "./world/facility";
 import "./style.css";
@@ -97,7 +97,6 @@ function updateMissionHud(): void {
     objectiveDescription.textContent =
       "Find and activate both wall-mounted power relays.";
   }
-
 }
 
 function showNotice(message: string): void {
@@ -284,7 +283,7 @@ async function start(): Promise<void> {
 
     runtime.canvas.tabIndex = 0;
     runtime.canvas.setAttribute("aria-label", "Project CHOKEPOINT first-person simulation");
-    viewport.replaceChildren(runtime.canvas);
+    viewport.prepend(runtime.canvas);
     runtime.engine.setHardwareScalingLevel(
       1 / Math.min(window.devicePixelRatio || 1, 1.5),
     );
