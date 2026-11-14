@@ -12,6 +12,22 @@ The project uses Babylon.js 9.36.0.
 - The test range is built from static ground and obstacle geometry.
 - The current player body is a temporary first-person visual proxy.
 
+## Cloudflare Pages deployment
+
+This repository is configured for a static Vite build.
+
+| Setting | Value |
+| --- | --- |
+| Production branch | `main` |
+| Root directory | `/` |
+| Build command | `npm run build` |
+| Build output directory | `dist` |
+| Node.js | `22.12.0` |
+
+The root `.node-version` file pins the build runtime used by Cloudflare Pages.
+
+Connect `critical-dummy/Project-CHOKEPOINT` in Cloudflare Pages, apply the settings above, and deploy. No Pages Functions or server-side runtime are required by the current game foundation.
+
 ## Local development
 
 Requirements: Node.js 22.12.0 or newer.
