@@ -186,7 +186,7 @@ export function createFirstPersonController(
       window.removeEventListener("blur", onWindowBlur);
       if (document.pointerLockElement === canvas) document.exitPointerLock();
       camera.dispose();
-      bodyRoot.dispose(false, true);
+      bodyRoot.dispose(false, false);
       clothing.dispose();
       trousers.dispose();
       bootsMaterial.dispose();
