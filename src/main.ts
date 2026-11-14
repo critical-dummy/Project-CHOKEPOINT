@@ -152,26 +152,31 @@ function updateMissionHud(): void {
 }
 
 function updateObjectiveDistance(): void {
-  if (!player || !level) return;
+  const currentPlayer = player;
+  const currentLevel = level;
+  if (!currentPlayer || !currentLevel) return;
 
+  const playerPosition = currentPlayer.camera.position;
   let label = "";
 
   if (mission.exitUnlocked) {
-    const distance = Vector3.Distance(player.camera.position, level.exitPosition);
+    const distance = Vector3.Distance(playerPosition, currentLevel.exitPosition);
     label = `EXIT · ${Math.round(distance)} M`;
   } else {
-
-    const targets = (["west", "east"] as const).filter((relay) => !mission.relays[relay]);
+    const targets = (["west", "east"] as const).filter(
+      (relay) => !mission.relays[relay],
+    );
+    const relayPositions = currentLevel.relayPositions;
     const nearest = targets.sort(
       (a, b) =>
-        Vector3.Distance(player.camera.position, level.relayPositions[a]) -
-        Vector3.Distance(player.camera.position, level.relayPositions[b]),
+        Vector3.Distance(playerPosition, relayPositions[a]) -
+        Vector3.Distance(playerPosition, relayPositions[b]),
     )[0];
 
     if (nearest) {
       const distance = Vector3.Distance(
-        player.camera.position,
-        level.relayPositions[nearest],
+        playerPosition,
+        relayPositions[nearest],
       );
       label = `${nearest.toUpperCase()} RELAY · ${Math.round(distance)} M`;
     }
