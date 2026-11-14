@@ -18,6 +18,10 @@ if (!viewport || !status || !help) {
   throw new Error("Required application elements are missing.");
 }
 
+const appViewport: HTMLDivElement = viewport;
+const runtimeStatus: HTMLParagraphElement = status;
+const controlsHelp: HTMLParagraphElement = help;
+
 interface Runtime {
   engine: AbstractEngine;
   canvas: HTMLCanvasElement;
@@ -97,7 +101,7 @@ async function start(): Promise<void> {
 
     runtime.canvas.tabIndex = 0;
     runtime.canvas.setAttribute("aria-label", "Project CHOKEPOINT 3D simulation");
-    viewport.replaceChildren(runtime.canvas);
+    appViewport.replaceChildren(runtime.canvas);
     runtime.engine.setHardwareScalingLevel(
       1 / Math.min(window.devicePixelRatio || 1, 1.5),
     );
@@ -112,12 +116,12 @@ async function start(): Promise<void> {
     createLighting(scene);
     player = createFirstPersonController(runtime.canvas, scene);
 
-    status.textContent = `Renderer: ${runtime.backend}`;
-    help.textContent =
+    runtimeStatus.textContent = `Renderer: ${runtime.backend}`;
+    controlsHelp.textContent =
       "WASD move · Mouse look · Shift run · Click viewport to capture mouse · Esc release";
 
     resizeObserver = new ResizeObserver(() => runtime?.engine.resize());
-    resizeObserver.observe(viewport);
+    resizeObserver.observe(appViewport);
     window.addEventListener("resize", onResize);
 
     runtime.engine.runRenderLoop(() => {
@@ -127,7 +131,7 @@ async function start(): Promise<void> {
     window.addEventListener("pagehide", dispose, { once: true });
   } catch (error) {
     console.error("Simulation initialization failed:", error);
-    status.textContent =
+    runtimeStatus.textContent =
       "Simulation unavailable. Check browser graphics support and the developer console.";
   }
 }
