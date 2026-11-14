@@ -123,6 +123,14 @@ button { font: inherit; }
   line-height: 1.55;
 }
 
+.objective-panel .objective-distance {
+  margin-top: 9px;
+  color: #d7b77d;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+}
+
 .relay-status {
   display: grid;
   gap: 7px;
