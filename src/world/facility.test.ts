@@ -32,6 +32,7 @@ describe("maintenance facility mission level", () => {
     expect(level.relayPositions.west.x).toBeCloseTo(-14.35, 2);
     expect(level.relayPositions.east.x).toBeCloseTo(14.35, 2);
     expect(level.exitPosition.z).toBeCloseTo(22.3, 2);
+    expect(scene?.getTransformNodeByName("ventilation-rotor")).not.toBeNull();
   });
 
   it("restores facility lighting and returns to emergency power on reset", () => {
