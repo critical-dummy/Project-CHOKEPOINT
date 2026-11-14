@@ -251,6 +251,13 @@ function onCanvasClick(): void {
 
 function onKeyDown(event: KeyboardEvent): void {
   if (phase !== "active" || event.repeat) return;
+
+  if (event.code === "Escape") {
+    event.preventDefault();
+    pauseMission();
+    return;
+  }
+
   if (event.code === "KeyE") {
     event.preventDefault();
     interact();
