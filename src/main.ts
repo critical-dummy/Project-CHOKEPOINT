@@ -1,54 +1,30 @@
 import * as THREE from "three";
 import { WebGPURenderer } from "three/webgpu";
+import { createFirstPersonController } from "./player/first-person-controller";
+import { createTestRange } from "./world/test-range";
 import "./style.css";
 
 const viewport = document.querySelector<HTMLDivElement>("#viewport");
 const status = document.querySelector<HTMLParagraphElement>("#runtime-status");
+const help = document.querySelector<HTMLParagraphElement>("#controls-help");
 
-if (!viewport || !status) {
+if (!viewport || !status || !help) {
   throw new Error("Required application elements are missing.");
 }
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color("#171b1e");
-
-const camera = new THREE.PerspectiveCamera(
-  55,
-  viewport.clientWidth / Math.max(viewport.clientHeight, 1),
-  0.1,
-  100,
-);
-camera.position.set(3.5, 2.5, 5);
-camera.lookAt(0, 0, 0);
-
-const grid = new THREE.GridHelper(12, 24, "#667078", "#343b40");
-scene.add(grid);
-
-const referenceGeometry = new THREE.BoxGeometry(1, 1, 1);
-const referenceMaterial = new THREE.MeshStandardMaterial({
-  color: "#8b969d",
-  roughness: 0.78,
-  metalness: 0.08,
-});
-const referenceObject = new THREE.Mesh(referenceGeometry, referenceMaterial);
-referenceObject.position.y = 0.5;
-scene.add(referenceObject);
-
-scene.add(new THREE.HemisphereLight("#dce6ed", "#252a2e", 2.1));
-
-const keyLight = new THREE.DirectionalLight("#ffffff", 2.2);
-keyLight.position.set(4, 7, 3);
-scene.add(keyLight);
+const world = createTestRange();
+const player = createFirstPersonController(world.colliders);
+world.scene.add(player.object);
 
 let renderer: THREE.WebGLRenderer | WebGPURenderer | undefined;
 let animationFrame = 0;
 let disposed = false;
 let resizeObserver: ResizeObserver | undefined;
+const clock = new THREE.Clock();
 
 function createWebGLFallback(): THREE.WebGLRenderer {
-  const fallback = new THREE.WebGLRenderer({ antialias: true });
-  status.textContent = "Renderer: WebGL fallback";
-  return fallback;
+  status.textContent = "Renderer: WebGL 2 fallback";
+  return new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
 }
 
 async function initializeRenderer(): Promise<void> {
@@ -72,7 +48,7 @@ async function initializeRenderer(): Promise<void> {
       return;
     }
 
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
     renderer.setSize(viewport.clientWidth, viewport.clientHeight);
     viewport.appendChild(renderer.domElement);
 
@@ -80,36 +56,36 @@ async function initializeRenderer(): Promise<void> {
       if (!renderer || disposed) return;
       const width = Math.max(viewport.clientWidth, 1);
       const height = Math.max(viewport.clientHeight, 1);
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
+      player.camera.aspect = width / height;
+      player.camera.updateProjectionMatrix();
       renderer.setSize(width, height);
     });
     resizeObserver.observe(viewport);
 
+    help.textContent = "WASD move · Mouse look · Shift run · Space jump · Esc release mouse";
     const render = (): void => {
       if (!renderer || disposed) return;
-      renderer.render(scene, camera);
+      player.update(clock.getDelta());
+      renderer.render(world.scene, player.camera);
       animationFrame = window.requestAnimationFrame(render);
     };
     render();
 
-    window.addEventListener(
-      "pagehide",
-      () => {
-        disposed = true;
-        window.cancelAnimationFrame(animationFrame);
-        resizeObserver?.disconnect();
-        renderer?.dispose();
-        referenceGeometry.dispose();
-        referenceMaterial.dispose();
-      },
-      { once: true },
-    );
+    window.addEventListener("pagehide", dispose, { once: true });
   } catch (error) {
     console.error("Renderer initialization failed:", error);
-    status.textContent =
-      "Renderer unavailable. Check browser graphics support and console.";
+    status.textContent = "Renderer unavailable. Check browser graphics support and console.";
   }
+}
+
+function dispose(): void {
+  if (disposed) return;
+  disposed = true;
+  window.cancelAnimationFrame(animationFrame);
+  resizeObserver?.disconnect();
+  renderer?.dispose();
+  player.dispose();
+  world.dispose();
 }
 
 void initializeRenderer();
