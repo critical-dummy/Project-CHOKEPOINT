@@ -29,6 +29,7 @@ const replayButton = requiredElement<HTMLButtonElement>("replay-mission");
 const reloadButton = requiredElement<HTMLButtonElement>("reload-page");
 const objectiveTitle = requiredElement<HTMLElement>("objective-title");
 const objectiveDescription = requiredElement<HTMLElement>("objective-description");
+const objectiveDistance = requiredElement<HTMLElement>("objective-distance");
 const westStatus = requiredElement<HTMLElement>("west-status");
 const eastStatus = requiredElement<HTMLElement>("east-status");
 const interactionPrompt = requiredElement<HTMLElement>("interaction-prompt");
@@ -97,6 +98,31 @@ function updateMissionHud(): void {
     objectiveDescription.textContent =
       "Find and activate both wall-mounted power relays.";
   }
+}
+
+function updateObjectiveDistance(): void {
+  if (!player || !level) return;
+
+  if (mission.exitUnlocked) {
+    const distance = Vector3.Distance(player.camera.position, level.exitPosition);
+    objectiveDistance.textContent = `EXIT · ${Math.round(distance)} M`;
+    return;
+  }
+
+  const targets = (["west", "east"] as const).filter((relay) => !mission.relays[relay]);
+  const nearest = targets.sort(
+    (a, b) =>
+      Vector3.Distance(player.camera.position, level.relayPositions[a]) -
+      Vector3.Distance(player.camera.position, level.relayPositions[b]),
+  )[0];
+
+  if (!nearest) return;
+  const distance = Vector3.Distance(
+    player.camera.position,
+    level.relayPositions[nearest],
+  );
+  objectiveDistance.textContent =
+    `${nearest.toUpperCase()} RELAY · ${Math.round(distance)} M`;
 }
 
 function showNotice(message: string): void {
@@ -305,6 +331,7 @@ async function start(): Promise<void> {
     scene.activeCamera = player.camera;
 
     updateMissionHud();
+    updateObjectiveDistance();
     scene.onBeforeCameraRenderObservable.add(() => player?.updateBody());
     startButton.disabled = false;
     startButton.textContent = "BEGIN MISSION";
@@ -323,6 +350,7 @@ async function start(): Promise<void> {
 
       if (phase === "active") {
         level.update(deltaSeconds);
+        updateObjectiveDistance();
         updateInteractionTarget();
 
         if (mission.exitUnlocked && level.isInsideExit(player.camera.position)) {
