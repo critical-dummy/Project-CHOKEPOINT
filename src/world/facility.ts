@@ -135,8 +135,8 @@ export function createMissionLevel(scene: Scene): MissionLevel {
   }
 
   const relayPositions: Record<RelayId, Vector3> = {
-    west: new Vector3(-11.7, 1.2, -5),
-    east: new Vector3(11.7, 1.2, 5),
+    west: new Vector3(-14.35, 1.2, -5),
+    east: new Vector3(14.35, 1.2, 5),
   };
   const exitPosition = new Vector3(0, 1.8, 22.3);
 
