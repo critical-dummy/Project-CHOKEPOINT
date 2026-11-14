@@ -10,6 +10,8 @@ import { Scene } from "@babylonjs/core/scene";
 import type { RelayId } from "../game/mission-state";
 
 export interface MissionLevel {
+  relayPositions: Record<RelayId, Vector3>;
+  exitPosition: Vector3;
   relayPanels: Record<RelayId, Mesh>;
   gate: Mesh;
   setRelayActive(relay: RelayId): void;
@@ -132,11 +134,17 @@ export function createMissionLevel(scene: Scene): MissionLevel {
     );
   }
 
+  const relayPositions: Record<RelayId, Vector3> = {
+    west: new Vector3(-11.7, 1.2, -5),
+    east: new Vector3(11.7, 1.2, 5),
+  };
+  const exitPosition = new Vector3(0, 1.8, 22.3);
+
   const relayPanels = {
     west: createRelay(
       scene,
       "west",
-      new Vector3(-11.7, 1.2, -5),
+      relayPositions.west,
       -Math.PI / 2,
       materials.console,
       materials.screen,
@@ -145,7 +153,7 @@ export function createMissionLevel(scene: Scene): MissionLevel {
     east: createRelay(
       scene,
       "east",
-      new Vector3(11.7, 1.2, 5),
+      relayPositions.east,
       Math.PI / 2,
       materials.console,
       materials.screen,
@@ -229,6 +237,8 @@ export function createMissionLevel(scene: Scene): MissionLevel {
   let gateOpen = false;
 
   return {
+    relayPositions,
+    exitPosition,
     relayPanels,
     gate,
     setRelayActive(relay) {
@@ -280,8 +290,8 @@ export function createMissionLevel(scene: Scene): MissionLevel {
       }
     },
     isInsideExit(position) {
-      const dx = position.x;
-      const dz = position.z - 22.3;
+      const dx = position.x - exitPosition.x;
+      const dz = position.z - exitPosition.z;
       return gateOpen && dx * dx + dz * dz <= 2.0 * 2.0;
     },
   };
