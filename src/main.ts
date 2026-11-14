@@ -1,0 +1,115 @@
+import * as THREE from "three";
+import { WebGPURenderer } from "three/webgpu";
+import "./style.css";
+
+const viewport = document.querySelector<HTMLDivElement>("#viewport");
+const status = document.querySelector<HTMLParagraphElement>("#runtime-status");
+
+if (!viewport || !status) {
+  throw new Error("Required application elements are missing.");
+}
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color("#171b1e");
+
+const camera = new THREE.PerspectiveCamera(
+  55,
+  viewport.clientWidth / Math.max(viewport.clientHeight, 1),
+  0.1,
+  100,
+);
+camera.position.set(3.5, 2.5, 5);
+camera.lookAt(0, 0, 0);
+
+const grid = new THREE.GridHelper(12, 24, "#667078", "#343b40");
+scene.add(grid);
+
+const referenceGeometry = new THREE.BoxGeometry(1, 1, 1);
+const referenceMaterial = new THREE.MeshStandardMaterial({
+  color: "#8b969d",
+  roughness: 0.78,
+  metalness: 0.08,
+});
+const referenceObject = new THREE.Mesh(referenceGeometry, referenceMaterial);
+referenceObject.position.y = 0.5;
+scene.add(referenceObject);
+
+scene.add(new THREE.HemisphereLight("#dce6ed", "#252a2e", 2.1));
+
+const keyLight = new THREE.DirectionalLight("#ffffff", 2.2);
+keyLight.position.set(4, 7, 3);
+scene.add(keyLight);
+
+let renderer: THREE.WebGLRenderer | WebGPURenderer | undefined;
+let animationFrame = 0;
+let disposed = false;
+let resizeObserver: ResizeObserver | undefined;
+
+function createWebGLFallback(): THREE.WebGLRenderer {
+  const fallback = new THREE.WebGLRenderer({ antialias: true });
+  status.textContent = "Renderer: WebGL fallback";
+  return fallback;
+}
+
+async function initializeRenderer(): Promise<void> {
+  try {
+    if ("gpu" in navigator) {
+      try {
+        const candidate = new WebGPURenderer({ antialias: true });
+        await candidate.init();
+        renderer = candidate;
+        status.textContent = "Renderer: WebGPU";
+      } catch (error) {
+        console.warn("WebGPU initialization failed; using WebGL.", error);
+        renderer = createWebGLFallback();
+      }
+    } else {
+      renderer = createWebGLFallback();
+    }
+
+    if (disposed || !renderer) {
+      renderer?.dispose();
+      return;
+    }
+
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(viewport.clientWidth, viewport.clientHeight);
+    viewport.appendChild(renderer.domElement);
+
+    resizeObserver = new ResizeObserver(() => {
+      if (!renderer || disposed) return;
+      const width = Math.max(viewport.clientWidth, 1);
+      const height = Math.max(viewport.clientHeight, 1);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    });
+    resizeObserver.observe(viewport);
+
+    const render = (): void => {
+      if (!renderer || disposed) return;
+      renderer.render(scene, camera);
+      animationFrame = window.requestAnimationFrame(render);
+    };
+    render();
+
+    window.addEventListener(
+      "pagehide",
+      () => {
+        disposed = true;
+        window.cancelAnimationFrame(animationFrame);
+        resizeObserver?.disconnect();
+        renderer?.dispose();
+        referenceGeometry.dispose();
+        referenceMaterial.dispose();
+      },
+      { once: true },
+    );
+  } catch (error) {
+    console.error("Renderer initialization failed:", error);
+    status.textContent =
+      "Renderer unavailable. Check browser graphics support and console.";
+  }
+}
+
+void initializeRenderer();
