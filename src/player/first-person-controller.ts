@@ -115,6 +115,7 @@ export function createFirstPersonController(
   }
 
   const onKeyDown = (event: KeyboardEvent): void => {
+    if (!controlsAttached) return;
     if (event.code === "ShiftLeft" || event.code === "ShiftRight") {
       sprintKeys.add(event.code);
       updateMovementSpeed();
@@ -122,6 +123,7 @@ export function createFirstPersonController(
   };
 
   const onKeyUp = (event: KeyboardEvent): void => {
+    if (!controlsAttached) return;
     if (event.code === "ShiftLeft" || event.code === "ShiftRight") {
       sprintKeys.delete(event.code);
       updateMovementSpeed();
