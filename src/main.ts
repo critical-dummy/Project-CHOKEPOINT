@@ -1,4 +1,3 @@
-import "@babylonjs/core/Collisions/collisionCoordinator";
 import { Engine } from "@babylonjs/core/Engines/engine";
 import { WebGPUEngine } from "@babylonjs/core/Engines/webgpuEngine";
 import type { AbstractEngine } from "@babylonjs/core/Engines/abstractEngine";
@@ -45,8 +44,13 @@ async function createRuntime(): Promise<Runtime> {
 
     try {
       const engine = new WebGPUEngine(canvas, { antialias: true });
-      await engine.initAsync();
-      return { engine, canvas, backend: "WebGPU" };
+      try {
+        await engine.initAsync();
+        return { engine, canvas, backend: "WebGPU" };
+      } catch (error) {
+        engine.dispose();
+        throw error;
+      }
     } catch (error) {
       console.warn("WebGPU initialization failed; creating a WebGL canvas.", error);
       canvas.remove();
@@ -91,6 +95,8 @@ async function start(): Promise<void> {
       return;
     }
 
+    runtime.canvas.tabIndex = 0;
+    runtime.canvas.setAttribute("aria-label", "Project CHOKEPOINT 3D simulation");
     viewport.replaceChildren(runtime.canvas);
     runtime.engine.setHardwareScalingLevel(
       1 / Math.min(window.devicePixelRatio || 1, 1.5),
@@ -98,7 +104,9 @@ async function start(): Promise<void> {
 
     scene = new Scene(runtime.engine);
     scene.collisionsEnabled = true;
-    scene.gravity = new Vector3(0, -0.9, 0);
+    // Babylon camera gravity is applied as a per-frame displacement, not an SI force.
+    // This conservative value is a temporary movement approximation pending fixed-step physics.
+    scene.gravity = new Vector3(0, -0.15, 0);
 
     createTestRange(scene);
     createLighting(scene);
