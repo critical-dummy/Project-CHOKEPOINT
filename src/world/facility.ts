@@ -7,7 +7,7 @@ import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import type { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
-import type { Scene } from "@babylonjs/core/scene";
+import { Scene } from "@babylonjs/core/scene";
 import type { RelayId } from "../game/mission-state";
 
 export interface MissionLevel {
