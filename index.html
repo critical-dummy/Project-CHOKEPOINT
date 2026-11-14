@@ -79,6 +79,42 @@
         </div>
       </section>
 
+      <section id="relay-puzzle-overlay" class="screen-overlay is-hidden">
+        <div class="screen-panel relay-puzzle-panel">
+          <div class="screen-kicker">LOCAL INTERACTION <span>POWER SYSTEM</span></div>
+          <p class="location-label">MAINTENANCE CONTROL</p>
+          <h1 id="relay-puzzle-title">RELAY SYNCHRONIZATION</h1>
+          <p id="relay-puzzle-description" class="briefing-copy">
+            Match the three-symbol reference pattern, then synchronize the relay.
+          </p>
+
+          <div class="puzzle-reference">
+            <span class="puzzle-label">REFERENCE PATTERN</span>
+            <div class="puzzle-symbol-row">
+              <span id="relay-target-0">●</span>
+              <span id="relay-target-1">◆</span>
+              <span id="relay-target-2">▲</span>
+            </div>
+          </div>
+
+          <div class="puzzle-selectors">
+            <span class="puzzle-label">SELECTOR INPUT</span>
+            <div class="puzzle-symbol-row">
+              <button id="relay-selector-0" class="symbol-selector" type="button" aria-label="Selector 1">◆</button>
+              <button id="relay-selector-1" class="symbol-selector" type="button" aria-label="Selector 2">◆</button>
+              <button id="relay-selector-2" class="symbol-selector" type="button" aria-label="Selector 3">◆</button>
+            </div>
+          </div>
+
+          <p id="puzzle-status" class="puzzle-status" role="status" aria-live="polite">
+            Cycle each selector until it matches the reference.
+          </p>
+          <button id="sync-relay" class="primary-action" type="button" disabled>SYNC RELAY</button>
+          <button id="cancel-relay" class="secondary-action" type="button">CANCEL</button>
+          <p class="screen-footnote">SELECT SYMBOLS · ENTER TO SYNC · ESC TO CANCEL</p>
+        </div>
+      </section>
+
       <section id="pause-overlay" class="screen-overlay is-hidden">
         <div class="screen-panel compact-panel">
           <div class="screen-kicker">PROJECT: CHOKEPOINT</div>
