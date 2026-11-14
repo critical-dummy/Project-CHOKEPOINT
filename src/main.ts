@@ -6,6 +6,13 @@ import { Scene } from "@babylonjs/core/scene";
 import { createFirstPersonController } from "./player/first-person-controller";
 import { createMissionState, activateRelay, completeMission } from "./game/mission-state";
 import { loadMissionRecord, recordMissionCompletion } from "./game/save-runtime";
+import {
+  cycleRelaySelection,
+  getRelayPattern,
+  isRelayPatternMatched,
+  relaySymbol,
+} from "./game/relay-puzzle";
+import type { RelaySymbolIndex } from "./game/relay-puzzle";
 import type { RelayId } from "./game/mission-state";
 import { createMissionLevel } from "./world/facility";
 import "./style.css";
@@ -40,13 +47,25 @@ const missionTimer = requiredElement<HTMLElement>("mission-timer");
 const completionTime = requiredElement<HTMLElement>("completion-time");
 const bestTime = requiredElement<HTMLElement>("best-time");
 const completionCount = requiredElement<HTMLElement>("completion-count");
+const relayPuzzleOverlay = requiredElement<HTMLElement>("relay-puzzle-overlay");
+const relayPuzzleTitle = requiredElement<HTMLElement>("relay-puzzle-title");
+const relayPuzzleDescription = requiredElement<HTMLElement>("relay-puzzle-description");
+const puzzleStatus = requiredElement<HTMLElement>("puzzle-status");
+const syncRelayButton = requiredElement<HTMLButtonElement>("sync-relay");
+const cancelRelayButton = requiredElement<HTMLButtonElement>("cancel-relay");
+const targetSymbols = [0, 1, 2].map((slot) =>
+  requiredElement<HTMLElement>(`relay-target-${slot}`),
+);
+const selectorButtons = [0, 1, 2].map((slot) =>
+  requiredElement<HTMLButtonElement>(`relay-selector-${slot}`),
+);
 
 interface Runtime {
   engine: AbstractEngine;
   canvas: HTMLCanvasElement;
 }
 
-type GamePhase = "briefing" | "active" | "paused" | "complete" | "error";
+type GamePhase = "briefing" | "active" | "puzzle" | "paused" | "complete" | "error";
 
 let runtime: Runtime | undefined;
 let scene: Scene | undefined;
@@ -62,6 +81,8 @@ let lastObjectiveDistance = "";
 let missionElapsedMs = 0;
 let runStartedAt = 0;
 let lastTimerLabel = "";
+let selectedRelay: RelayId | null = null;
+let relaySelection: RelaySymbolIndex[] = [0, 0, 0];
 
 async function createRuntime(): Promise<Runtime> {
   try {
@@ -211,6 +232,99 @@ function updateInteractionTarget(): void {
   showInteractionPrompt("");
 }
 
+function renderRelayPuzzle(): void {
+  if (!selectedRelay) return;
+
+  const target = getRelayPattern(selectedRelay);
+  target.forEach((symbol, index) => {
+    targetSymbols[index].textContent = relaySymbol(symbol);
+  });
+
+  relaySelection.forEach((symbol, index) => {
+    selectorButtons[index].textContent = relaySymbol(symbol);
+    selectorButtons[index].setAttribute(
+      "aria-label",
+      `Selector ${index + 1}: ${relaySymbol(symbol)}. Activate to cycle symbol.`,
+    );
+  });
+
+  const matched = isRelayPatternMatched(selectedRelay, relaySelection);
+  syncRelayButton.disabled = !matched;
+  puzzleStatus.textContent = matched
+    ? "Pattern matched. Synchronization is ready."
+    : "Cycle each selector until it matches the reference.";
+  puzzleStatus.classList.toggle("is-matched", matched);
+}
+
+function resumeFromRelayPuzzle(): void {
+  if (phase !== "puzzle") return;
+
+  selectedRelay = null;
+  relayPuzzleOverlay.classList.add("is-hidden");
+  phase = "active";
+  runStartedAt = performance.now();
+  player?.attachControls();
+  updateMissionTimer();
+
+  if (runtime && player && document.pointerLockElement !== runtime.canvas) {
+    void player.requestPointerLock().catch(() => {
+      showNotice("Click the simulation view to capture the mouse.");
+    });
+  }
+}
+
+function openRelayPuzzle(relay: RelayId): void {
+  if (phase !== "active" || mission.relays[relay]) return;
+
+  if (runStartedAt > 0) {
+    missionElapsedMs += performance.now() - runStartedAt;
+    runStartedAt = 0;
+  }
+  updateMissionTimer();
+
+  selectedRelay = relay;
+  relaySelection = [0, 0, 0];
+  phase = "puzzle";
+  player?.detachControls();
+  showInteractionPrompt("");
+
+  if (document.pointerLockElement) document.exitPointerLock();
+
+  relayPuzzleTitle.textContent =
+    `${relay === "west" ? "WEST" : "EAST"} RELAY SYNCHRONIZATION`;
+  relayPuzzleDescription.textContent =
+    "Match the three-symbol reference pattern, then synchronize the relay.";
+  renderRelayPuzzle();
+  relayPuzzleOverlay.classList.remove("is-hidden");
+}
+
+function completeRelayPuzzle(): void {
+  if (
+    phase !== "puzzle" ||
+    !selectedRelay ||
+    !isRelayPatternMatched(selectedRelay, relaySelection)
+  ) {
+    return;
+  }
+
+  const relay = selectedRelay;
+  mission = activateRelay(mission, relay);
+  level?.setRelayActive(relay);
+  updateMissionHud();
+  updateObjectiveDistance();
+
+  const relayName = relay === "west" ? "West" : "East";
+  showNotice(`${relayName} relay synchronized.`);
+
+  if (mission.exitUnlocked) {
+    level?.restorePower();
+    level?.beginGateOpening();
+    showNotice("Power restored. Exit gate opening.");
+  }
+
+  resumeFromRelayPuzzle();
+}
+
 function interact(): void {
   if (phase !== "active" || !currentInteraction) return;
 
@@ -222,18 +336,7 @@ function interact(): void {
       return;
     }
 
-    mission = activateRelay(mission, relay);
-    level?.setRelayActive(relay);
-    updateMissionHud();
-
-    const relayName = relay === "west" ? "West" : "East";
-    showNotice(`${relayName} relay synchronized.`);
-
-    if (mission.exitUnlocked) {
-      level?.restorePower();
-      level?.beginGateOpening();
-      showNotice("Power restored. Exit gate opening.");
-    }
+    openRelayPuzzle(relay);
   }
 }
 
@@ -344,7 +447,20 @@ function onCanvasClick(): void {
 }
 
 function onKeyDown(event: KeyboardEvent): void {
-  if (phase !== "active" || event.repeat) return;
+  if (event.repeat) return;
+
+  if (phase === "puzzle") {
+    if (event.code === "Escape") {
+      event.preventDefault();
+      resumeFromRelayPuzzle();
+    } else if (event.code === "Enter") {
+      event.preventDefault();
+      completeRelayPuzzle();
+    }
+    return;
+  }
+
+  if (phase !== "active") return;
 
   if (event.code === "Escape") {
     event.preventDefault();
@@ -448,6 +564,16 @@ async function start(): Promise<void> {
   }
 }
 
+selectorButtons.forEach((button, index) => {
+  button.addEventListener("click", () => {
+    if (phase !== "puzzle") return;
+    relaySelection = cycleRelaySelection(relaySelection, index);
+    renderRelayPuzzle();
+  });
+});
+
+syncRelayButton.addEventListener("click", completeRelayPuzzle);
+cancelRelayButton.addEventListener("click", resumeFromRelayPuzzle);
 startButton.addEventListener("click", () => void beginOrResumeMission());
 resumeButton.addEventListener("click", () => void beginOrResumeMission());
 restartButton.addEventListener("click", restartMission);
