@@ -6,6 +6,7 @@ import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import type { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
+import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import type { Scene } from "@babylonjs/core/scene";
 import type { RelayId } from "../game/mission-state";
 
@@ -202,6 +203,42 @@ export function createMissionLevel(scene: Scene): MissionLevel {
   key.intensity = 0.48;
 
   const facilityLamps: PointLight[] = [];
+  const ventHousing = MeshBuilder.CreateCylinder(
+    "ventilation-housing",
+    { height: 0.18, diameter: 2.2, tessellation: 32 },
+    scene,
+  );
+  ventHousing.position.set(0, 3.55, -27.55);
+  ventHousing.rotation.x = Math.PI / 2;
+  ventHousing.material = materials.dark;
+  ventHousing.checkCollisions = false;
+  ventHousing.isPickable = false;
+
+  const ventilationRotor = new TransformNode("ventilation-rotor", scene);
+  ventilationRotor.position.set(0, 3.55, -27.42);
+
+  const ventHub = MeshBuilder.CreateSphere(
+    "ventilation-hub",
+    { diameter: 0.3, segments: 12 },
+    scene,
+  );
+  ventHub.parent = ventilationRotor;
+  ventHub.material = materials.metal;
+  ventHub.isPickable = false;
+
+  for (let blade = 0; blade < 3; blade += 1) {
+    const ventBlade = MeshBuilder.CreateBox(
+      `ventilation-blade-${blade}`,
+      { width: 0.16, height: 0.92, depth: 0.08 },
+      scene,
+    );
+    ventBlade.parent = ventilationRotor;
+    ventBlade.position.y = 0.53;
+    ventBlade.rotation.z = blade * (Math.PI * 2 / 3);
+    ventBlade.material = materials.metal;
+    ventBlade.isPickable = false;
+  }
+
   const lightPositions = [
     new Vector3(-7, 4.4, -16),
     new Vector3(7, 4.4, -16),
@@ -248,8 +285,11 @@ export function createMissionLevel(scene: Scene): MissionLevel {
 
   let openingGate = false;
   let gateOpen = false;
+  let normalPower = false;
+  let environmentClock = 0;
 
   function setEmergencyPower(): void {
+    normalPower = false;
     ambient.intensity = 0.72;
     key.intensity = 0.48;
     facilityLamps.forEach((lamp, index) => {
@@ -266,6 +306,7 @@ export function createMissionLevel(scene: Scene): MissionLevel {
   }
 
   function setNormalPower(): void {
+    normalPower = true;
     ambient.intensity = 1.0;
     key.intensity = 0.62;
     facilityLamps.forEach((lamp, index) => {
@@ -302,8 +343,16 @@ export function createMissionLevel(scene: Scene): MissionLevel {
       openingGate = true;
     },
     update(deltaSeconds) {
+      const delta = Math.min(Math.max(deltaSeconds, 0), 0.05);
+      environmentClock += delta;
+      ventilationRotor.rotation.z += delta * 0.9;
+
+      if (!normalPower) {
+        const pulse = (Math.sin(environmentClock * 3.2) + 1) * 0.5;
+        exitIndicator.intensity = 0.14 + pulse * 0.12;
+      }
+
       if (!openingGate || gateOpen) return;
-      const delta = Math.min(deltaSeconds, 0.05);
       gate.position.y = Math.min(
         GATE_OPEN_Y,
         gate.position.y + GATE_RAISE_SPEED * delta,
@@ -324,6 +373,8 @@ export function createMissionLevel(scene: Scene): MissionLevel {
       gateOpen = false;
       gate.position.y = GATE_CLOSED_Y;
       gate.checkCollisions = true;
+      environmentClock = 0;
+      ventilationRotor.rotation.z = 0;
       setEmergencyPower();
       for (const relay of ["west", "east"] as const) {
         const panel = relayPanels[relay];
