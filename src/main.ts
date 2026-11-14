@@ -1,3 +1,4 @@
+import "@babylonjs/core/Collisions/collisionCoordinator";
 import { Engine } from "@babylonjs/core/Engines/engine";
 import { WebGPUEngine } from "@babylonjs/core/Engines/webgpuEngine";
 import type { AbstractEngine } from "@babylonjs/core/Engines/abstractEngine";
