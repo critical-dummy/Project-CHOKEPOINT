@@ -1,34 +1,24 @@
 # Project: CHOKEPOINT
 
-A browser-based, realism-focused, single-player first-person simulation focused on physical, environmental, and human systems.
+A browser-based, single-player first-person simulation built with Babylon.js.
 
-## Current runtime
+## Mission 01 — Power Restoration
 
-The project uses Babylon.js 9.36.0.
+Restore the west and east power relays inside the North Maintenance Facility. When both relays are online, the exit gate opens. Reach the marked exit to complete the mission.
 
-- WebGPU is attempted first, with a WebGL fallback.
-- The player view uses Babylon.js `UniversalCamera`.
-- Camera collision is registered through Babylon.js' collision coordinator.
-- The test range is built from static ground and obstacle geometry.
-- The current player body is a temporary first-person visual proxy.
+### Controls
 
-## Cloudflare Pages deployment
-
-This repository is configured for a static Vite build.
-
-| Setting | Value |
+| Input | Action |
 | --- | --- |
-| Production branch | `main` |
-| Root directory | `/` |
-| Build command | `npm run build` |
-| Build output directory | `dist` |
-| Node.js | `22.12.0` |
+| WASD / Arrow keys | Move |
+| Mouse | Look |
+| Shift | Run |
+| E | Interact |
+| Esc | Pause |
 
-The root `.node-version` file pins the build runtime used by Cloudflare Pages.
+Click **Begin Mission** to start. The mouse is captured while playing.
 
-Connect `critical-dummy/Project-CHOKEPOINT` in Cloudflare Pages, apply the settings above, and deploy. No Pages Functions or server-side runtime are required by the current game foundation.
-
-## Local development
+## Development
 
 Requirements: Node.js 22.12.0 or newer.
 
@@ -37,15 +27,7 @@ npm install
 npm run dev
 ```
 
-## Controls
-
-- `WASD` or arrow keys: move
-- Mouse: look around
-- Click the viewport: capture the mouse
-- `Shift`: run
-- `Esc`: release the mouse
-
-## Validation
+Run validation before committing:
 
 ```sh
 npm run typecheck
@@ -53,14 +35,20 @@ npm test
 npm run build
 ```
 
-GitHub Actions runs the same validation steps for pushes to `main` and pull requests targeting `main`.
+## Deployment
 
-The test suite currently verifies test-range geometry, collision flags, and environment fog configuration using Babylon.js' `NullEngine`.
+Cloudflare Pages serves the static Vite build.
 
-## Current scope and limitations
+- Production branch: `main`
+- Build command: `npm run build`
+- Output directory: `dist`
+- Node.js: `22.12.0`
 
-This is the first runtime foundation, not a completed game. The current camera movement is a prototype. It does not yet include a dedicated character controller, jumping, an animated full-body rig, save data, mission flow, or the complete environmental simulation.
+## Runtime
 
-The camera gravity setting is a temporary per-frame movement approximation; it is not a fixed-step physical simulation. A dedicated physics layer will replace this when its requirements are implemented and measured.
-
-The environment is a neutral test space for validating rendering and general movement. No real-world weapon operation, tactical procedures, or real weapon performance models are implemented.
+- Babylon.js 9.36.0
+- WebGPU with WebGL fallback
+- UniversalCamera first-person controls
+- Scene collision and gravity
+- Ray-based console interaction
+- Mission progression, gate animation, pause, restart, and completion states
