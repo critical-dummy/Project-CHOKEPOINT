@@ -53,6 +53,7 @@ let resizeObserver: ResizeObserver | undefined;
 let disposed = false;
 let currentInteraction = "";
 let lastPrompt = "";
+let lastObjectiveDistance = "";
 
 async function createRuntime(): Promise<Runtime> {
   try {
@@ -103,26 +104,33 @@ function updateMissionHud(): void {
 function updateObjectiveDistance(): void {
   if (!player || !level) return;
 
+  let label = "";
+
   if (mission.exitUnlocked) {
     const distance = Vector3.Distance(player.camera.position, level.exitPosition);
-    objectiveDistance.textContent = `EXIT · ${Math.round(distance)} M`;
-    return;
+    label = `EXIT · ${Math.round(distance)} M`;
+  } else {
+
+    const targets = (["west", "east"] as const).filter((relay) => !mission.relays[relay]);
+    const nearest = targets.sort(
+      (a, b) =>
+        Vector3.Distance(player.camera.position, level.relayPositions[a]) -
+        Vector3.Distance(player.camera.position, level.relayPositions[b]),
+    )[0];
+
+    if (nearest) {
+      const distance = Vector3.Distance(
+        player.camera.position,
+        level.relayPositions[nearest],
+      );
+      label = `${nearest.toUpperCase()} RELAY · ${Math.round(distance)} M`;
+    }
   }
 
-  const targets = (["west", "east"] as const).filter((relay) => !mission.relays[relay]);
-  const nearest = targets.sort(
-    (a, b) =>
-      Vector3.Distance(player.camera.position, level.relayPositions[a]) -
-      Vector3.Distance(player.camera.position, level.relayPositions[b]),
-  )[0];
-
-  if (!nearest) return;
-  const distance = Vector3.Distance(
-    player.camera.position,
-    level.relayPositions[nearest],
-  );
-  objectiveDistance.textContent =
-    `${nearest.toUpperCase()} RELAY · ${Math.round(distance)} M`;
+  if (label && label !== lastObjectiveDistance) {
+    lastObjectiveDistance = label;
+    objectiveDistance.textContent = label;
+  }
 }
 
 function showNotice(message: string): void {
@@ -249,6 +257,7 @@ function restartMission(): void {
   phase = "briefing";
   currentInteraction = "";
   lastPrompt = "";
+  lastObjectiveDistance = "";
   missionNotice.textContent = "";
   showInteractionPrompt("");
   updateMissionHud();
