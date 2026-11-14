@@ -6,19 +6,106 @@
     <meta name="theme-color" content="#111315" />
     <meta
       name="description"
-      content="Project: CHOKEPOINT — a browser-based, realism-focused, single-player FPS built around physical, environmental, and human simulation."
+      content="Project: CHOKEPOINT — a first-person environmental simulation."
     />
     <title>Project: CHOKEPOINT</title>
   </head>
   <body>
-    <main id="app" aria-label="Project CHOKEPOINT">
-      <section class="boot-status" aria-live="polite">
-        <p class="eyebrow">PROJECT: CHOKEPOINT</p>
-        <h1>First-person simulation</h1>
-        <p id="runtime-status">Initializing Babylon.js…</p>
-        <p id="controls-help">Preparing controls…</p>
+    <main id="game" aria-label="Project CHOKEPOINT">
+      <div id="viewport">
+        <section id="game-hud" class="game-hud is-hidden" aria-live="polite">
+          <header class="hud-header">
+            <div class="brand-line">
+              <span class="brand-mark">C</span>
+              <span>PROJECT: CHOKEPOINT</span>
+            </div>
+            <div class="mission-index">FIELD SIMULATION <span>01 / 01</span></div>
+          </header>
+
+          <section class="objective-panel" aria-label="Mission objective">
+            <div class="panel-kicker">CURRENT OBJECTIVE</div>
+            <h2 id="objective-title">Restore auxiliary power</h2>
+            <p id="objective-description">Activate both power relays in the maintenance hall.</p>
+            <div class="relay-status">
+              <div class="relay-row">
+                <span>WEST RELAY</span>
+                <strong id="west-status">OFFLINE</strong>
+              </div>
+              <div class="relay-row">
+                <span>EAST RELAY</span>
+                <strong id="east-status">OFFLINE</strong>
+              </div>
+            </div>
+          </section>
+
+          <div id="reticle" class="reticle" aria-hidden="true">
+            <span></span><span></span>
+          </div>
+
+          <div id="interaction-prompt" class="interaction-prompt is-hidden">
+            <kbd>E</kbd>
+            <span id="interaction-label">Activate relay</span>
+          </div>
+
+          <div id="mission-notice" class="mission-notice" role="status" aria-live="polite"></div>
+
+          <footer class="hud-footer">
+            <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> MOVE</span>
+            <span><kbd>SHIFT</kbd> RUN</span>
+            <span><kbd>E</kbd> INTERACT</span>
+            <span><kbd>ESC</kbd> PAUSE</span>
+          </footer>
+        </section>
+      </div>
+
+      <section id="briefing-overlay" class="screen-overlay">
+        <div class="screen-panel briefing-panel">
+          <div class="screen-kicker">PROJECT: CHOKEPOINT <span>MISSION 01</span></div>
+          <p class="location-label">NORTH MAINTENANCE FACILITY</p>
+          <h1>POWER<br />RESTORATION</h1>
+          <p class="briefing-copy">
+            The facility has switched to emergency power. Restore both local
+            relays, then reach the marked exit.
+          </p>
+          <div class="briefing-data">
+            <div><span>OPERATION</span><strong>GRID RECOVERY</strong></div>
+            <div><span>LOCATION</span><strong>MAINTENANCE WING</strong></div>
+            <div><span>OBJECTIVES</span><strong>02 RELAYS / 01 EXIT</strong></div>
+          </div>
+          <button id="start-mission" class="primary-action" disabled>INITIALIZING…</button>
+          <p class="screen-footnote">WASD MOVE · MOUSE LOOK · E INTERACT · ESC PAUSE</p>
+        </div>
       </section>
-      <div id="viewport" aria-label="3D simulation viewport"></div>
+
+      <section id="pause-overlay" class="screen-overlay is-hidden">
+        <div class="screen-panel compact-panel">
+          <div class="screen-kicker">PROJECT: CHOKEPOINT</div>
+          <h1>PAUSED</h1>
+          <p class="briefing-copy">The simulation is suspended.</p>
+          <button id="resume-mission" class="primary-action">RESUME</button>
+          <button id="restart-mission" class="secondary-action">RESTART MISSION</button>
+        </div>
+      </section>
+
+      <section id="complete-overlay" class="screen-overlay is-hidden">
+        <div class="screen-panel compact-panel">
+          <div class="screen-kicker">MISSION REPORT <span>01 / 01</span></div>
+          <p class="location-label">NORTH MAINTENANCE FACILITY</p>
+          <h1>MISSION<br />COMPLETE</h1>
+          <p class="briefing-copy">Auxiliary power restored. Exit reached.</p>
+          <div class="completion-stamp">GRID RECOVERY · SUCCESS</div>
+          <button id="replay-mission" class="primary-action">PLAY AGAIN</button>
+        </div>
+      </section>
+
+      <section id="error-overlay" class="screen-overlay is-hidden">
+        <div class="screen-panel compact-panel">
+          <div class="screen-kicker">RUNTIME ERROR</div>
+          <h1>SIMULATION<br />UNAVAILABLE</h1>
+          <p id="error-message" class="briefing-copy">The graphics runtime could not be initialized.</p>
+          <button id="reload-page" class="primary-action">RELOAD</button>
+        </div>
+      </section>
     </main>
     <script type="module" src="/src/main.ts"></script>
   </body>
