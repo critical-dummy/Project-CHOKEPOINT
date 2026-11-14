@@ -15,6 +15,7 @@ export interface MissionLevel {
   relayPanels: Record<RelayId, Mesh>;
   gate: Mesh;
   setRelayActive(relay: RelayId): void;
+  restorePower(): void;
   beginGateOpening(): void;
   update(deltaSeconds: number): void;
   reset(): void;
@@ -200,6 +201,7 @@ export function createMissionLevel(scene: Scene): MissionLevel {
   key.position = new Vector3(-8, 12, -10);
   key.intensity = 0.48;
 
+  const facilityLamps: PointLight[] = [];
   const lightPositions = [
     new Vector3(-7, 4.4, -16),
     new Vector3(7, 4.4, -16),
@@ -226,7 +228,18 @@ export function createMissionLevel(scene: Scene): MissionLevel {
       : Color3.FromHexString("#c5d9d9");
     lamp.intensity = index === 6 ? 0.65 : 0.52;
     lamp.range = 13;
+    facilityLamps.push(lamp);
   });
+
+  const exitIndicator = new PointLight(
+    "exit-power-indicator",
+    new Vector3(0, 4.25, 16.7),
+    scene,
+  );
+  exitIndicator.diffuse = Color3.FromHexString("#b27d47");
+  exitIndicator.intensity = 0.24;
+  exitIndicator.range = 9;
+  facilityLamps.push(exitIndicator);
 
   const relayIndicators: Record<RelayId, Mesh> = {
     west: relayPanels.west,
@@ -235,6 +248,31 @@ export function createMissionLevel(scene: Scene): MissionLevel {
 
   let openingGate = false;
   let gateOpen = false;
+
+  function setEmergencyPower(): void {
+    ambient.intensity = 0.72;
+    key.intensity = 0.48;
+    facilityLamps.forEach((lamp, index) => {
+      lamp.intensity = index === facilityLamps.length - 1
+        ? 0.24
+        : index === 6 ? 0.65 : 0.52;
+    });
+    exitIndicator.diffuse = Color3.FromHexString("#b27d47");
+  }
+
+  function setNormalPower(): void {
+    ambient.intensity = 1.0;
+    key.intensity = 0.62;
+    facilityLamps.forEach((lamp, index) => {
+      lamp.intensity = index === facilityLamps.length - 1
+        ? 0.9
+        : index === 6 ? 1.05 : 0.82;
+      if (index !== facilityLamps.length - 1) {
+        lamp.diffuse = Color3.FromHexString("#d5e2db");
+      }
+    });
+    exitIndicator.diffuse = Color3.FromHexString("#68c18c");
+  }
 
   return {
     relayPositions,
@@ -250,6 +288,9 @@ export function createMissionLevel(scene: Scene): MissionLevel {
         ...panel.metadata,
         relayActive: true,
       };
+    },
+    restorePower() {
+      setNormalPower();
     },
     beginGateOpening() {
       if (openingGate || gateOpen) return;
@@ -278,6 +319,7 @@ export function createMissionLevel(scene: Scene): MissionLevel {
       gateOpen = false;
       gate.position.y = GATE_CLOSED_Y;
       gate.checkCollisions = true;
+      setEmergencyPower();
       for (const relay of ["west", "east"] as const) {
         const panel = relayPanels[relay];
         const indicator = panel.metadata?.indicatorMesh as Mesh | undefined;
