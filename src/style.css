@@ -89,6 +89,23 @@ button { font: inherit; }
 
 .mission-index span { color: #e0e3df; }
 
+.mission-time {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #9da8a5;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.mission-time strong {
+  color: #e4c48c;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
 .objective-panel {
   position: absolute;
   top: 82px;
@@ -408,6 +425,34 @@ kbd {
 .compact-panel .location-label { margin-top: 30px; }
 .compact-panel .primary-action { margin-top: 27px; }
 
+.completion-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 23px;
+  padding: 15px 0;
+  border-top: 1px solid rgb(255 255 255 / 12%);
+  border-bottom: 1px solid rgb(255 255 255 / 12%);
+}
+
+.completion-stats div {
+  display: grid;
+  gap: 6px;
+}
+
+.completion-stats span {
+  color: #89948e;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.completion-stats strong {
+  color: #e8ece6;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
 .completion-stamp {
   margin-top: 22px;
   padding: 11px 12px;
@@ -422,6 +467,8 @@ kbd {
   .hud-header { min-height: 48px; padding: 0 14px; }
   .brand-line { gap: 8px; font-size: 9px; }
   .mission-index { font-size: 8px; }
+  .mission-time { gap: 5px; font-size: 8px; }
+  .mission-time strong { font-size: 11px; }
   .objective-panel { top: 62px; left: 12px; padding: 12px 13px; }
   .objective-panel h2 { font-size: 15px; }
   .objective-panel p { font-size: 11px; }
