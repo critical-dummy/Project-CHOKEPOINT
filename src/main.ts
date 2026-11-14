@@ -291,7 +291,7 @@ async function start(): Promise<void> {
 
     scene = new Scene(runtime.engine);
     scene.collisionsEnabled = true;
-    scene.gravity = new Vector3(0, -0.15, 0);
+    scene.gravity = new Vector3(0, -0.9, 0);
 
     level = createMissionLevel(scene);
     player = createFirstPersonController(runtime.canvas, scene);
