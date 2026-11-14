@@ -17,8 +17,8 @@ export interface FirstPersonController {
   dispose(): void;
 }
 
-const WALK_SPEED = 2.8;
-const RUN_SPEED = 4.5;
+const WALK_SPEED = 0.9;
+const RUN_SPEED = 1.35;
 const PLAYER_EYE_HEIGHT = 1.8;
 const SPAWN_POSITION = new Vector3(0, PLAYER_EYE_HEIGHT, -22);
 
