@@ -1,81 +1,66 @@
-import * as THREE from "three";
+import { Color3 } from "@babylonjs/core/Maths/math.color";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
+import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
+import { Scene } from "@babylonjs/core/scene";
 
-export interface TestRange {
-  scene: THREE.Scene;
-  colliders: THREE.Box3[];
-  dispose(): void;
-}
+export function createTestRange(scene: Scene): void {
+  scene.clearColor.set(0.54, 0.59, 0.6, 1);
+  scene.fogMode = Scene.FOGMODE_LINEAR;
+  scene.fogColor = Color3.FromHexString("#89969a");
+  scene.fogStart = 30;
+  scene.fogEnd = 96;
 
-export function createTestRange(): TestRange {
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color("#89969a");
-  scene.fog = new THREE.Fog("#89969a", 28, 100);
+  const groundMaterial = new StandardMaterial("range-ground-material", scene);
+  groundMaterial.diffuseColor = Color3.FromHexString("#656b62");
+  groundMaterial.specularColor = Color3.Black();
 
-  const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(120, 120),
-    new THREE.MeshStandardMaterial({ color: "#656b62", roughness: 1 }),
+  const concreteMaterial = new StandardMaterial("range-concrete-material", scene);
+  concreteMaterial.diffuseColor = Color3.FromHexString("#777b78");
+  concreteMaterial.specularColor = Color3.Black();
+
+  const earthMaterial = new StandardMaterial("range-earth-material", scene);
+  earthMaterial.diffuseColor = Color3.FromHexString("#777064");
+  earthMaterial.specularColor = Color3.Black();
+
+  const ground = MeshBuilder.CreateGround(
+    "test-range-ground",
+    { width: 120, height: 120, subdivisions: 2 },
+    scene,
   );
-  ground.rotation.x = -Math.PI / 2;
-  ground.receiveShadow = true;
-  scene.add(ground);
-
-  const colliders: THREE.Box3[] = [];
-  const materials = [
-    new THREE.MeshStandardMaterial({ color: "#777b78", roughness: 0.92 }),
-    new THREE.MeshStandardMaterial({ color: "#777064", roughness: 0.96 }),
-  ];
+  ground.material = groundMaterial;
+  ground.checkCollisions = true;
+  ground.receiveShadows = true;
 
   function block(
-    position: THREE.Vector3,
-    size: THREE.Vector3,
-    materialIndex = 0,
+    name: string,
+    position: Vector3,
+    dimensions: Vector3,
+    material = concreteMaterial,
   ): void {
-    const mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(size.x, size.y, size.z),
-      materials[materialIndex],
+    const mesh = MeshBuilder.CreateBox(
+      name,
+      {
+        width: dimensions.x,
+        height: dimensions.y,
+        depth: dimensions.z,
+      },
+      scene,
     );
-    mesh.position.copy(position);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    scene.add(mesh);
-    colliders.push(new THREE.Box3().setFromCenterAndSize(position, size));
+    mesh.position.copyFrom(position);
+    mesh.material = material;
+    mesh.checkCollisions = true;
+    mesh.receiveShadows = true;
   }
 
-  // A neutral test environment: walls and static obstacles only.
-  block(new THREE.Vector3(0, 1.5, -18), new THREE.Vector3(40, 3, 1));
-  block(new THREE.Vector3(-20, 1.5, 0), new THREE.Vector3(1, 3, 36));
-  block(new THREE.Vector3(20, 1.5, 0), new THREE.Vector3(1, 3, 36));
-  block(new THREE.Vector3(0, 1.5, 18), new THREE.Vector3(40, 3, 1));
+  // Neutral geometry for validating movement and collision behavior.
+  block("north-boundary", new Vector3(0, 1.5, 28), new Vector3(40, 3, 1));
+  block("south-boundary", new Vector3(0, 1.5, -18), new Vector3(40, 3, 1));
+  block("west-boundary", new Vector3(-20, 1.5, 5), new Vector3(1, 3, 46));
+  block("east-boundary", new Vector3(20, 1.5, 5), new Vector3(1, 3, 46));
 
-  block(new THREE.Vector3(-7, 0.75, -5), new THREE.Vector3(3, 1.5, 3), 1);
-  block(new THREE.Vector3(6, 0.6, -9), new THREE.Vector3(4, 1.2, 2), 1);
-  block(new THREE.Vector3(8, 1, 5), new THREE.Vector3(2, 2, 5), 0);
-  block(new THREE.Vector3(-3, 0.5, 8), new THREE.Vector3(5, 1, 2), 1);
-
-  const grid = new THREE.GridHelper(40, 40, "#a0a7a2", "#858d87");
-  grid.position.y = 0.012;
-  scene.add(grid);
-
-  scene.add(new THREE.HemisphereLight("#e6edf0", "#53584f", 2.1));
-  const sun = new THREE.DirectionalLight("#fff5df", 2.5);
-  sun.position.set(-12, 22, 8);
-  sun.castShadow = true;
-  sun.shadow.mapSize.set(1024, 1024);
-  scene.add(sun);
-
-  return {
-    scene,
-    colliders,
-    dispose() {
-      scene.traverse((object) => {
-        if (object instanceof THREE.Mesh) {
-          object.geometry.dispose();
-          const mats = Array.isArray(object.material)
-            ? object.material
-            : [object.material];
-          mats.forEach((material) => material.dispose());
-        }
-      });
-    },
-  };
+  block("low-block-a", new Vector3(-7, 0.75, 0), new Vector3(3, 1.5, 3), earthMaterial);
+  block("low-block-b", new Vector3(6, 0.6, -7), new Vector3(4, 1.2, 2), earthMaterial);
+  block("vertical-obstacle", new Vector3(8, 1, 10), new Vector3(2, 2, 5));
+  block("long-obstacle", new Vector3(-3, 0.5, 17), new Vector3(5, 1, 2), earthMaterial);
 }

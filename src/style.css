@@ -76,9 +76,16 @@ h1 {
   display: block;
   width: 100%;
   height: 100%;
+  outline: none;
+  touch-action: none;
 }
 
 @media (max-width: 600px) {
-  .boot-status { grid-template-columns: 1fr; gap: 5px; padding: 12px 14px; }
+  .boot-status {
+    grid-template-columns: 1fr;
+    gap: 5px;
+    padding: 12px 14px;
+  }
+
   #runtime-status { text-align: left; }
 }
