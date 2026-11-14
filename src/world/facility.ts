@@ -1,4 +1,5 @@
 import { Color3 } from "@babylonjs/core/Maths/math.color";
+import { Color4 } from "@babylonjs/core/Maths/math.color";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { PointLight } from "@babylonjs/core/Lights/pointLight";
 import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight";
@@ -24,7 +25,7 @@ const GATE_OPEN_Y = 5.9;
 const GATE_RAISE_SPEED = 1.8;
 
 export function createMissionLevel(scene: Scene): MissionLevel {
-  scene.clearColor = Color3.FromHexString("#202a2c").toColor4(1);
+  scene.clearColor = new Color4(0.125, 0.165, 0.173, 1);
   scene.fogMode = Scene.FOGMODE_LINEAR;
   scene.fogColor = Color3.FromHexString("#202a2c");
   scene.fogStart = 35;
@@ -136,7 +137,7 @@ export function createMissionLevel(scene: Scene): MissionLevel {
       scene,
       "west",
       new Vector3(-11.7, 1.2, -5),
-      Math.PI / 2,
+      -Math.PI / 2,
       materials.console,
       materials.screen,
       materials.inactive,
@@ -145,7 +146,7 @@ export function createMissionLevel(scene: Scene): MissionLevel {
       scene,
       "east",
       new Vector3(11.7, 1.2, 5),
-      -Math.PI / 2,
+      Math.PI / 2,
       materials.console,
       materials.screen,
       materials.inactive,
@@ -231,10 +232,12 @@ export function createMissionLevel(scene: Scene): MissionLevel {
     relayPanels,
     gate,
     setRelayActive(relay) {
-      const indicator = relayIndicators[relay];
-      indicator.material = materials.active;
-      indicator.metadata = {
-        ...indicator.metadata,
+      const panel = relayIndicators[relay];
+      const indicator = panel.metadata?.indicatorMesh as Mesh | undefined;
+      if (indicator) indicator.material = materials.active;
+      panel.material = materials.active;
+      panel.metadata = {
+        ...panel.metadata,
         relayActive: true,
       };
     },
@@ -286,7 +289,7 @@ function material(
   result.diffuseColor = Color3.FromHexString(diffuse);
   result.emissiveColor = Color3.FromHexString(emissive);
   result.specularColor = new Color3(0.08, 0.08, 0.08);
-  result.roughness = 0.92;
+  result.specularPower = 12;
   return result;
 }
 
